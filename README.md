@@ -38,5 +38,5 @@ create view errors as
 select time ::date, count(*) as err
 from log
 where status != '200 OK'
-group by time ::date1
+group by time ::date;
 ```
