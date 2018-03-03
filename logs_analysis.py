@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import psycopg2
-from datetime import datetime
 
 db = psycopg2.connect(database="news")
 c = db.cursor()
@@ -28,7 +27,7 @@ q2 = """ select authors.name, count(*) as views
          where log.path = '/article/' || articles.slug
          and articles.author=authors.id
          group by authors.name
-         order by views
+         order by views desc
      """
 
 c.execute(q2)
@@ -56,17 +55,16 @@ print "\n\nOn which days did more than 1% of requests lead to errors?\n"
 # where status != '200 OK'
 # group by time ::date
 
-q3 = """ select errors.time, (errors.err*100/allrequest.requests) as percent_err
+q3 = """ select errors.time, CAST((errors.err*100) AS float) / CAST
+           (allrequest.requests AS float) as percent_err
          from allrequest, errors
-         where (errors.err*100/allrequest.requests)>1
+         where CAST((errors.err*100) AS float) / CAST
+           (allrequest.requests AS float)>1
          and errors.time = allrequest.time
      """
 c.execute(q3)
 result = c.fetchall()
 
 for r in result:
-    date_input = str(r[0])
-    date_object = datetime.strptime(date_input, '%Y-%m-%d')
-    print (date_object.strftime('%B %d,%Y')) + "-" + str(r[1]) + "% errors"
-# we used strftime function to convert date in other format
+    print('{0:%B %d, %Y} - {1:.2f}% errors'.format(r[0], r[1]))
 db.close()
